@@ -1,4 +1,4 @@
-﻿using Prism.Behaviors;
+using Prism.Behaviors;
 using Prism.Common;
 using Prism.Ioc;
 using Prism.Logging;
@@ -13,7 +13,7 @@ namespace Prism.Navigation
     /// <summary>
     /// Provides page based navigation for ViewModels.
     /// </summary>
-    public class PageNavigationService : INavigationService, IPlatformNavigationService, IPageAware
+    public class PageNavigationService : INavigationService, IPageAware
     {
         internal const string RemovePageRelativePath = "../";
         internal const string RemovePageInstruction = "__RemovePage/";
@@ -23,15 +23,24 @@ namespace Prism.Navigation
         protected internal static PageNavigationSource NavigationSource { get; protected set; } = PageNavigationSource.Device;
 
         private readonly IContainerProvider _container;
+
+        /// <summary>
+        /// The <see cref="IApplicationProvider" /> to access the Application MainPage
+        /// </summary>
         protected readonly IApplicationProvider _applicationProvider;
+
+        /// <summary>
+        /// The <see cref="IPageBehaviorFactory" /> to apply application wide Behaviors for the given page.
+        /// </summary>
         protected readonly IPageBehaviorFactory _pageBehaviorFactory;
+
         protected readonly ILoggerFacade _logger;
 
         protected Page _page;
         Page IPageAware.Page
         {
-            get { return _page; }
-            set { _page = value; }
+            get => _page;
+            set => _page = value;
         }
 
         public PageNavigationService(IContainerExtension container, IApplicationProvider applicationProvider, IPageBehaviorFactory pageBehaviorFactory, ILoggerFacade logger)
@@ -61,7 +70,7 @@ namespace Prism.Navigation
             return GoBackInternal(parameters, null, true);
         }
 
-        Task<INavigationResult> IPlatformNavigationService.GoBackAsync(INavigationParameters parameters, bool? useModalNavigation, bool animated)
+        public virtual Task<INavigationResult> GoBackAsync(INavigationParameters parameters, bool? useModalNavigation, bool animated)
         {
             return GoBackInternal(parameters, useModalNavigation, animated);
         }
@@ -165,7 +174,7 @@ namespace Prism.Navigation
             return false;
         }
 
-        Task<INavigationResult> IPlatformNavigationService.GoBackToRootAsync(INavigationParameters parameters)
+        public virtual Task<INavigationResult> GoBackToRootAsync(INavigationParameters parameters)
         {
             return GoBackToRootInternal(parameters);
         }
@@ -173,7 +182,6 @@ namespace Prism.Navigation
         /// <summary>
         /// When navigating inside a NavigationPage: Pops all but the root Page off the navigation stack
         /// </summary>
-        /// <param name="navigationService">The INavigatinService instance</param>
         /// <param name="parameters">The navigation parameters</param>
         /// <remarks>Only works when called from a View within a NavigationPage</remarks>
         protected async virtual Task<INavigationResult> GoBackToRootInternal(INavigationParameters parameters)
@@ -239,7 +247,7 @@ namespace Prism.Navigation
             return NavigateInternal(name, parameters, null, true);
         }
 
-        Task<INavigationResult> IPlatformNavigationService.NavigateAsync(string name, INavigationParameters parameters, bool? useModalNavigation, bool animated)
+        public virtual Task<INavigationResult> NavigateAsync(string name, INavigationParameters parameters, bool? useModalNavigation, bool animated)
         {
             return NavigateInternal(name, parameters, useModalNavigation, animated);
         }
@@ -286,7 +294,8 @@ namespace Prism.Navigation
             return NavigateInternal(uri, parameters, null, true);
         }
 
-        Task<INavigationResult> IPlatformNavigationService.NavigateAsync(Uri uri, INavigationParameters parameters, bool? useModalNavigation, bool animated)
+
+        public virtual Task<INavigationResult> NavigateAsync(Uri uri, INavigationParameters parameters, bool? useModalNavigation, bool animated)
         {
             return NavigateInternal(uri, parameters, useModalNavigation, animated);
         }
