@@ -80,4 +80,8 @@
     <None Include="$(MSBuildThisFileDirectory)xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Build from Xamarin.Forms Source -->
+  <Import Project="..\..\BuildFromSource.props"
+          Condition="Exists('..\..\BuildFromSource.props')" />
+
 </Project>

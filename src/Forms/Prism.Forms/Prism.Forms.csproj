@@ -11,12 +11,36 @@
     <Version Condition=" '$(PRISM_FORMS_VERSION)' != '' ">$(PRISM_FORMS_VERSION)</Version>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition=" '$(XFRootCodePath)' == '' ">
     <PackageReference Include="Xamarin.Forms" Version="3.6.0.344457" />
   </ItemGroup>
+
+  <Import Project="$(XFRootCodePath)\.nuspec\Xamarin.Forms.DefaultItems.props"
+          Condition=" '$(XFRootCodePath)' != '' " />
+  <Import Project="$(XFRootCodePath)\.nuspec\Xamarin.Forms.DefaultItems.targets"
+          Condition=" '$(XFRootCodePath)' != '' " />
+
+  <ItemGroup Condition=" '$(XFRootCodePath)' != '' ">
+    <ProjectReference ReferenceOutputAssembly="False" Include="$(XFRootCodePath)\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj" />
+    <ProjectReference Include="$(XFRootCodePath)\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
+    <ProjectReference Include="$(XFRootCodePath)\Xamarin.Forms.CustomAttributes\Xamarin.Forms.CustomAttributes.csproj" />
+    <ProjectReference Include="$(XFRootCodePath)\Xamarin.Forms.Xaml\Xamarin.Forms.Xaml.csproj" />
+  </ItemGroup>
+
+  <!-- Note sure why Shane duplicated this in the PrismSample.csproj -->
+  <Import Project="$(XFRootCodePath)\.nuspec\Xamarin.Forms.targets"
+          Condition="$(XFRootCodePath) != '' And '$(BuildingInsideVisualStudio)' == 'true'" />
+  <Import Project="$(XFRootCodePath)\.nuspec\Xamarin.Forms.targets"
+          Condition="$(XFRootCodePath) != '' And '$(BuildingInsideVisualStudio)' != 'true'" />
 
   <ItemGroup>
     <ProjectReference Include="..\..\Prism.Core\Prism.Core.csproj" />
   </ItemGroup>
+
+  <Target Name="EnsureBuildTasks" BeforeTargets="BeforeCompile" Condition=" '$(XFRootCodePath)' != '' ">
+    <Message Text="EnsureBuildTasks is running" />
+    <MSBuild Projects="$(XFRootCodePath)\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj"
+      Properties="Configuration=$(Configuration)"/>
+  </Target>
 
 </Project>
