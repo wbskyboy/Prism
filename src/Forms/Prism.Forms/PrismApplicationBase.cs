@@ -19,7 +19,6 @@ namespace Prism
     public abstract class PrismApplicationBase : Application
     {
         public new static PrismApplicationBase Current => (PrismApplicationBase) Application.Current;
-        public const string NavigationServiceName = "PageNavigationService";
         public const string NavigationServiceParameterName = "navigationService";
         IContainerExtension _containerExtension;
         IModuleCatalog _moduleCatalog;
@@ -109,16 +108,25 @@ namespace Prism
             });
         }
 
-
         protected INavigationService CreateNavigationService(Page page)
         {
-            var navService = Container.Resolve<INavigationService>(NavigationServiceName);
+            var navService = Container.Resolve<INavigationService>();
             if(navService is IPageAware pa)
             {
                 pa.Page = page;
             }
 
             return navService;
+        }
+
+        protected INavigationService UseShellNavigation<TShell, TNavigationService>()
+            where TShell : Shell
+            where TNavigationService : class, INavigationService
+        {
+            _containerExtension.RegisterSingleton<INavigationService, TNavigationService>();
+            var shell = Container.Resolve<TShell>();
+            MainPage = shell;
+            return Container.Resolve<INavigationService>();
         }
 
         /// <summary>
@@ -195,7 +203,7 @@ namespace Prism
             containerRegistry.RegisterSingleton<IModuleCatalog, ModuleCatalog>();
             containerRegistry.RegisterSingleton<IModuleManager, ModuleManager>();
             containerRegistry.RegisterSingleton<IModuleInitializer, ModuleInitializer>();
-            containerRegistry.Register<INavigationService, PageNavigationService>(NavigationServiceName);
+            containerRegistry.Register<INavigationService, PageNavigationService>();
         }
 
         /// <summary>
