@@ -125,8 +125,10 @@ namespace Prism
         {
             _containerExtension.RegisterSingleton<INavigationService, TNavigationService>();
             var shell = Container.Resolve<TShell>();
+            var navigationService = Container.Resolve<INavigationService>();
+            shell.SetNavigationService(navigationService);
             MainPage = shell;
-            return Container.Resolve<INavigationService>();
+            return navigationService;
         }
 
         /// <summary>

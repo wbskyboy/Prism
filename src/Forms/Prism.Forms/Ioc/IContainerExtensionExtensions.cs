@@ -8,8 +8,13 @@ namespace Prism.Ioc
     {
         public static INavigationService CreateNavigationService(this IContainerExtension containerExtension, Page page)
         {
-            var navigationService = containerExtension.Resolve<INavigationService>(PrismApplicationBase.NavigationServiceName);
-            ((IPageAware)navigationService).Page = page;
+            var navigationService = containerExtension.Resolve<INavigationService>();
+
+            if(navigationService is IPageAware pageAware)
+            {
+                pageAware.Page = page;
+            }
+
             return navigationService;
         }
     }
