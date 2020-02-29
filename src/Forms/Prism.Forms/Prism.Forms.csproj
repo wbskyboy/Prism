@@ -21,7 +21,7 @@
           Condition=" '$(XFRootCodePath)' != '' " />
 
   <ItemGroup Condition=" '$(XFRootCodePath)' != '' ">
-    <ProjectReference ReferenceOutputAssembly="False" Include="$(XFRootCodePath)\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj" />
+    <ProjectReference ReferenceOutputAssembly="False" Include="$(XFRootCodePath)\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj" Condition=" $(TargetFramework.StartsWith('netstandard')) " />
     <ProjectReference Include="$(XFRootCodePath)\Xamarin.Forms.Core\Xamarin.Forms.Core.csproj" />
     <ProjectReference Include="$(XFRootCodePath)\Xamarin.Forms.CustomAttributes\Xamarin.Forms.CustomAttributes.csproj" />
     <ProjectReference Include="$(XFRootCodePath)\Xamarin.Forms.Xaml\Xamarin.Forms.Xaml.csproj" />
@@ -34,10 +34,10 @@
           Condition="$(XFRootCodePath) != '' And '$(BuildingInsideVisualStudio)' != 'true'" />
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Prism.Core\Prism.Core.csproj" />
+    <ProjectReference Include="..\..\Prism\Prism.csproj" />
   </ItemGroup>
 
-  <Target Name="EnsureBuildTasks" BeforeTargets="BeforeCompile" Condition=" '$(XFRootCodePath)' != '' ">
+  <Target Name="EnsureBuildTasks" BeforeTargets="BeforeCompile" Condition=" '$(XFRootCodePath)' != '' AND $(TargetFramework.StartsWith('netstandard')) ">
     <Message Text="EnsureBuildTasks is running" />
     <MSBuild Projects="$(XFRootCodePath)\Xamarin.Forms.Build.Tasks\Xamarin.Forms.Build.Tasks.csproj"
       Properties="Configuration=$(Configuration)"/>
