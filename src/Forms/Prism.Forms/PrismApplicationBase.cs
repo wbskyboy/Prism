@@ -119,6 +119,9 @@ namespace Prism
             return navService;
         }
 
+        public INavigationService UseShellNavigation<TShell>()
+            where TShell : Shell => UseShellNavigation<TShell, ShellPrismNavigationService>();
+
         protected INavigationService UseShellNavigation<TShell, TNavigationService>()
             where TShell : Shell
             where TNavigationService : class, INavigationService
