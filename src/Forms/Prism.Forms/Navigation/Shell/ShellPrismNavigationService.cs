@@ -11,40 +11,25 @@ using System.Linq;
 
 namespace Prism.Navigation
 {
-    public class ShellPrismNavigationService :
-        ShellNavigationService,
-        INavigationService
+    /// <summary>
+    /// Prism's <see cref="INavigationService"/> for <see cref="ShellNavigationService"/>
+    /// </summary>
+    public partial class ShellPrismNavigationService : INavigationService
     {
         private readonly IContainerExtension _container;
         private IPageBehaviorFactory _pageBehaviorFactory { get; }
 
+        /// <summary>
+        /// Creates an instance of <see cref="ShellPrismNavigationService"/>
+        /// </summary>
+        /// <param name="containerExtension"></param>
+        /// <param name="pageBehaviorFactory"></param>
         public ShellPrismNavigationService(
             IContainerExtension containerExtension,
             IPageBehaviorFactory pageBehaviorFactory)
         {
             _container = containerExtension;
             _pageBehaviorFactory = pageBehaviorFactory;
-        }
-
-        public override async Task<ShellRouteState> NavigatingToAsync(ShellNavigationArgs args)
-        {
-            var pathPart = args.FutureState.CurrentRoute.GetCurrent();
-
-            if (pathPart.ShellPart is ShellContent shellContent)
-            {
-                var page = CreatePageFromSegment(shellContent.Route);
-                shellContent.Content = page;
-                await PageUtilities.OnInitializedAsync(page,
-                   _currentParameters
-                    );
-            }
-
-            return args.FutureState;
-        }
-
-        public override Task AppearingAsync(ShellLifecycleArgs args)
-        {
-            return base.AppearingAsync(args);
         }
 
         protected virtual Page CreatePage(string segmentName)
@@ -107,163 +92,74 @@ namespace Prism.Navigation
             throw new NotImplementedException();
         }
 
-        Task<INavigationResult> INavigationService.NavigateAsync(Uri uri){
-            return ((INavigationService)this).NavigateAsync(uri, null);
-        }
+        /// <summary>
+        /// Initiates navigation to the target specified by the <paramref name="uri"/>.
+        /// </summary>
+        /// <param name="uri">The Uri to navigate to</param>
+        /// <remarks>Navigation parameters can be provided in the Uri and by using the <paramref name="parameters"/>.</remarks>
+        /// <example>
+        /// Navigate(new Uri("MainPage?id=3&amp;name=dan", UriKind.RelativeSource), parameters);
+        /// </example>
+        /// <returns>The <see cref="INavigationResult" /> which will provide a Success == <c>true</c> if the Navigation was successful.</returns>
+        public virtual Task<INavigationResult> NavigateAsync(Uri uri) =>
+            NavigateAsync(uri, null);
 
-
-        async Task<INavigationResult> INavigationService.NavigateAsync(Uri uri, INavigationParameters parameters)
+        INavigationParameters _currentParameters;
+        /// <summary>
+        /// Initiates navigation to the target specified by the <paramref name="uri"/>.
+        /// </summary>
+        /// <param name="uri">The Uri to navigate to</param>
+        /// <param name="parameters">The navigation parameters</param>
+        /// <remarks>Navigation parameters can be provided in the Uri and by using the <paramref name="parameters"/>.</remarks>
+        /// <example>
+        /// Navigate(new Uri("MainPage?id=3&amp;name=dan", UriKind.RelativeSource), parameters);
+        /// </example>
+        /// <returns>The <see cref="INavigationResult" /> which will provide a Success == <c>true</c> if the Navigation was successful.</returns>
+        public virtual async Task<INavigationResult> NavigateAsync(Uri uri, INavigationParameters parameters)
         {
-            await  Shell.Current.GoToAsync(uri);
-            return new NavigationResult()
+            try
             {
-                Success = true
-            };
-        }
-
-        public override void ApplyParameters(ShellLifecycleArgs args)
-        {
-            base.ApplyParameters(args);
-
-            var element = args.Element;
-            var prismParameters = _currentParameters;
-            string fullSegmentPath = args.PathPart.NavigationParameters["foo"];
-            var navigationParameters = UriParsingHelper.GetSegmentParameters(fullSegmentPath, _currentParameters);
-
-            PageUtilities.OnInitializedAsync(element, navigationParameters);
-
-            if (element is ShellContent content && content.Content != null)
-                PageUtilities.OnInitializedAsync(content.Content, navigationParameters);
-        }
-
-        internal const string RemovePageRelativePath = "../";
-        private INavigationParameters _currentParameters;
-        private Dictionary<PathPart, INavigationParameters> _generateCurrentNavigationParameters;
-
-        // First... validates URI
-        public override Task<ShellRouteState> ParseAsync(ShellUriParserArgs args)
-        {
-            ShellRouteState newState = args.Shell.RouteState;
-
-            //var newState = RebuildCurrentState(args.Shell.CurrentState.Location, args.Shell.Items);
-            //var currentUri = args.Shell.CurrentState.Location;
-            var navigationSegments = UriParsingHelper.GetUriSegments(args.Uri);
-            navigationSegments.ToList().ForEach(x =>
-            {
-                var segmentName = UriParsingHelper.GetSegmentName(x);
-
-                // ../ViewA
-                if (segmentName == RemovePageRelativePath && newState.CurrentRoute.PathParts.Count >= 3)
+                _currentParameters = parameters;
+                await Shell.Current.GoToAsync(uri);
+                return new NavigationResult()
                 {
-                    var currentRoutes = newState.CurrentRoute.PathParts.ToList();
-                    currentRoutes.RemoveAt(newState.CurrentRoute.PathParts.Count - 1);
-                    newState.CurrentRoute.PathParts = currentRoutes;
-                    //return null;
-                }
-                else
+                    Success = true
+                };
+            }
+            catch (NavigationException navEx)
+            {
+                return new NavigationResult
                 {
-                    //ViewA?id=5&grapes=purple/ViewB?id=3
-                    //ViewA?id=5&id=4&id=2&id=1&grapes=purple
-
-                    var segmentParts = segmentName.Split('?');
-                    var navigationParameters = UriParsingHelper.GetSegmentParameters(x, _currentParameters);
-                    var shellItem = GetShellItem(args.Shell.Items, segmentName);
-                    //return new PrismPathPart(shellItem, segmentName, navigationParameters);
-                    newState.Add(new PathPart(shellItem, new Dictionary<string, string> { { "foo", x } }));
-                }
-            });
-
-           // newState.Add(newPathParts.Where(x => x != null && x.ShellPart != null).ToList());
-
-           // var routePath = new RoutePath(newState, null);
-           // var routeState = new ShellRouteState(routePath);
-            // Home/Demo
-
-            // Routing.ImplicitPrefix = "IMPL_";
-            //var item = args.Shell.Items.First(x => x.Route.StartsWith("IMPL_"));
-
-            return Task.FromResult(newState);
-        }
-
-        private static List<PathPart> RebuildCurrentState(Uri uri, IList<ShellItem> shellItems)
-        {
-            var pathParts = new List<PathPart>();
-            // TODO
-
-            return pathParts;
-        }
-
-        private static BaseShellItem GetShellItem(IList<ShellItem> items, string name)
-        {
-            var shellItem = items.FirstOrDefault(x => !IsImplicitRoute(x) && UriParsingHelper.GetSegmentName(x.Route) == name);
-            if (shellItem != null)
-                return shellItem;
-
-            var implicitItems = items.Where(x => IsImplicitRoute(x));
-            foreach (var implicitItem in implicitItems)
-            {
-                var item = GetShellItem(implicitItem.Items, name);
-                if (item != null)
-                    return item;
+                    Success = false,
+                    Exception = navEx
+                };
             }
-
-            return null;
-        }
-
-        private static BaseShellItem GetShellItem(IList<ShellSection> items, string name)
-        {
-            var shellItem = items.FirstOrDefault(x => !IsImplicitRoute(x) && UriParsingHelper.GetSegmentName(x.Route) == name);
-            if (shellItem != null)
-                return shellItem;
-
-            var implicitItems = items.Where(x => IsImplicitRoute(x));
-            foreach (var implicitItem in implicitItems)
+            catch (Exception ex)
             {
-                var item = GetShellItem(implicitItem.Items, name);
-                if (item != null)
-                    return item;
+                return new NavigationResult
+                {
+                    Success = false,
+                    Exception = new NavigationException(NavigationException.UnknownException, null, ex)
+                };
             }
-
-            return null;
+            
         }
 
-        private static BaseShellItem GetShellItem(IList<ShellContent> items, string name)
-        {
-            var shellItem = items.FirstOrDefault(x => !IsImplicitRoute(x) && UriParsingHelper.GetSegmentName(x.Route) == name);
-            if (shellItem != null)
-                return shellItem;
+        /// <summary>
+        /// Initiates navigation to the target specified by the <paramref name="name"/>.
+        /// </summary>
+        /// <param name="name">The name of the target to navigate to.</param>
+        /// <returns>The <see cref="INavigationResult" /> which will provide a Success == <c>true</c> if the Navigation was successful.</returns>
+        public virtual Task<INavigationResult> NavigateAsync(string name) =>
+            NavigateAsync(name, null);
 
-            return null;
-        }
-
-        private static bool IsImplicitRoute(BaseShellItem item) =>
-            item.Route.StartsWith("IMPL_");
-
-        //private class PrismPathPart : PathPart
-        //{
-        //    public PrismPathPart(BaseShellItem baseShellItem, string path, INavigationParameters parameters)
-        //        : base(baseShellItem, null)
-        //    {
-        //        NavigationParameters = parameters;
-                
-        //        //"page?id=4"
-        //        //Path == page
-        //        Path = path;
-        //    }
-
-        //    public new INavigationParameters NavigationParameters { get; }
-
-        //    public new string Path { get; }
-        //}
-
-        Task<INavigationResult> INavigationService.NavigateAsync(string name)
-        {
-            return ((INavigationService)this).NavigateAsync(name, null);
-        }
-
-        Task<INavigationResult> INavigationService.NavigateAsync(string name, INavigationParameters parameters)
-        {
-            return ((INavigationService)this).NavigateAsync(UriParsingHelper.Parse(name), parameters);
-        }
+        /// <summary>
+        /// Initiates navigation to the target specified by the <paramref name="name"/>.
+        /// </summary>
+        /// <param name="name">The name of the target to navigate to.</param>
+        /// <param name="parameters">The navigation parameters</param>
+        /// <returns>The <see cref="INavigationResult" /> which will provide a Success == <c>true</c> if the Navigation was successful.</returns>
+        public virtual Task<INavigationResult> NavigateAsync(string name, INavigationParameters parameters) =>
+            NavigateAsync(UriParsingHelper.Parse(name), parameters);
     }
 }
