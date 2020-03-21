@@ -133,59 +133,64 @@ namespace Prism.Navigation
             var navigationSegments = UriParsingHelper.GetUriSegments(args.Uri);
             //IEnumerable<ShellItem> items = args.Shell.Items;
             ShellItem rootShellItem = null;
-            navigationSegments.ToList().ForEach(x =>
+            foreach(var segment in navigationSegments)
             {
-                var segmentName = UriParsingHelper.GetSegmentName(x);
-
-                // ../ViewA
-                if (segmentName == RemovePageRelativePath && newState.CurrentRoute.PathParts.Count >= 3)
-                {
-                    var currentRoutes = newState.CurrentRoute.PathParts.ToList();
-                    currentRoutes.RemoveAt(newState.CurrentRoute.PathParts.Count - 1);
-                    newState.CurrentRoute.PathParts = currentRoutes;
-                    //return null;
-                }
-                else
-                {
-                    // TODO: Test these Prism type URI strings
-                    //ViewA?id=5&grapes=purple/ViewB?id=3
-                    //ViewA?id=5&id=4&id=2&id=1&grapes=purple
-// navigationService.NavigateAsync("ViewA?id=5&grapes=purple/ViewB?id=3", new NavigationParameters { { "foo", new { Bar = 1 } } });
-                    //new NavigationParameters { { "foo", new { Bar = 1 } } };
-
-                    //// ViewA
-                    //new NavigationParameters
-                    //{
-                    //    { "foo", new { Bar = 1} },
-                    //    { "id", 5 },
-                    //    { "grapes", "purple" }
-                    //};
-
-                    //// ViewB
-                    //new NavigationParameters
-                    //{
-                    //    { "foo", new { Bar = 1} },
-                    //    { "id", 3 }
-                    //};
-
-                    // ViewA?id=5
-                    var segmentParts = segmentName.Split('?');
-                    BaseShellItem currentItem = rootShellItem is null ? 
-                        GetShellItem(args.Shell.Items, segmentName) : 
-                        GetShellItem(rootShellItem.Items, segmentName);
-
-                    if (currentItem is null)
-                        return;
-                    else if (currentItem is ShellItem shellItem)
-                        rootShellItem = shellItem;
-
-                    var navigationParameters = UriParsingHelper.GetSegmentParameters(x, _currentParameters);
-
-                    newState.Add(new PrismPathPart(currentItem, navigationParameters));
-                }
-            });
+                ProcessNavigationSegment(segment, newState, _currentParameters, args.Shell, ref rootShellItem);
+            }
 
             return Task.FromResult(newState);
+        }
+
+        private static void ProcessNavigationSegment(string navigationSegment, ShellRouteState newState, INavigationParameters currentParameters, Shell shell, ref ShellItem rootShellItem)
+        {
+            var segmentName = UriParsingHelper.GetSegmentName(navigationSegment);
+
+            // ../ViewA
+            if (segmentName == RemovePageRelativePath && newState.CurrentRoute.PathParts.Count >= 3)
+            {
+                var currentRoutes = newState.CurrentRoute.PathParts.ToList();
+                currentRoutes.RemoveAt(newState.CurrentRoute.PathParts.Count - 1);
+                newState.CurrentRoute.PathParts = currentRoutes;
+                //return null;
+            }
+            else
+            {
+                // TODO: Test these Prism type URI strings
+                //ViewA?id=5&grapes=purple/ViewB?id=3
+                //ViewA?id=5&id=4&id=2&id=1&grapes=purple
+                // navigationService.NavigateAsync("ViewA?id=5&grapes=purple/ViewB?id=3", new NavigationParameters { { "foo", new { Bar = 1 } } });
+                //new NavigationParameters { { "foo", new { Bar = 1 } } };
+
+                //// ViewA
+                //new NavigationParameters
+                //{
+                //    { "foo", new { Bar = 1} },
+                //    { "id", 5 },
+                //    { "grapes", "purple" }
+                //};
+
+                //// ViewB
+                //new NavigationParameters
+                //{
+                //    { "foo", new { Bar = 1} },
+                //    { "id", 3 }
+                //};
+
+                // ViewA?id=5
+
+                BaseShellItem currentItem = rootShellItem is null ?
+                    GetShellItem(shell.Items, segmentName) :
+                    GetShellItem(rootShellItem.Items, segmentName);
+
+                if (currentItem is null)
+                    return;
+                else if (currentItem is ShellItem shellItem)
+                    rootShellItem = shellItem;
+
+                var navigationParameters = UriParsingHelper.GetSegmentParameters(navigationSegment, currentParameters);
+
+                newState.Add(new PrismPathPart(currentItem, navigationParameters));
+            }
         }
 
         private static BaseShellItem GetShellItem(IList<ShellContent> items, string name)
