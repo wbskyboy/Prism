@@ -10,10 +10,5 @@ namespace Prism.Unity
         {
             return new UnityContainerExtension();
         }
-
-        protected override void RegisterFrameworkExceptionTypes()
-        {
-            ExceptionExtensions.RegisterFrameworkExceptionType(typeof(ResolutionFailedException));
-        }
     }
 }
