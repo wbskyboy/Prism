@@ -14,17 +14,12 @@ namespace Prism.Common
     {
         public static void ViewAndViewModelAction<T>(object view, Action<T> action) where T : class
         {
-            T viewAsT = view as T;
-            if (viewAsT != null)
+            if (view is T viewAsT)
                 action(viewAsT);
-            var element = view as FrameworkElement;
-            if (element != null)
+
+            if (view is FrameworkElement element && element.DataContext is T viewModelAsT)
             {
-                var viewModelAsT = element.DataContext as T;
-                if (viewModelAsT != null)
-                {
-                    action(viewModelAsT);
-                }
+                action(viewModelAsT);
             }
         }
 
@@ -35,9 +30,8 @@ namespace Prism.Common
                 return viewAsT;
             }
 
-            if (view is FrameworkElement element)
+            if (view is FrameworkElement element && element.DataContext is T vmAsT)
             {
-                var vmAsT = element.DataContext as T;
                 return vmAsT;
             }
 
